@@ -1,8 +1,9 @@
 async function scheduleTimer({ providerRes, parserRes } = {}) {
     return {
+        // 开学时间实在找不到方法推断了，就填个当前时间吧QwQ
+        startSemester: Date.now().toString(),
         totalWeek: document.querySelector('#startWeek').children.length,
         startWithSunday: false,
-        startSemester: '',
         showWeekend: false,
         forenoon: 5,
         afternoon: 5,

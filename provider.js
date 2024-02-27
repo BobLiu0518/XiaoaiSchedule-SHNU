@@ -7,6 +7,7 @@ async function scheduleHtmlProvider(
     dom = document
 ) {
     let classes = [];
+    let mask = undefined;
     await loadTool('AIScheduleTools');
 
     function sleep(time) {
@@ -20,6 +21,18 @@ async function scheduleHtmlProvider(
             arr.push(start + i);
         }
         return arr;
+    }
+    function displayLoading(current, total) {
+        if (mask !== undefined) {
+            document.body.removeChild(mask);
+        }
+        const title = AIScheduleComponents.createTitle('导入中');
+        const content = AIScheduleComponents.createContent(
+            '正在导入课表：\n第' + current + '周，共' + total + '周'
+        );
+        const card = AIScheduleComponents.createCard([title, content]);
+        mask = AIScheduleComponents.createMask(card);
+        document.body.appendChild(mask);
     }
 
     // 模拟切换周数
@@ -52,7 +65,7 @@ async function scheduleHtmlProvider(
 
                 // 解析单元格 innerHTML
                 let [, className, classID, teacherName, week, place] =
-                    /^(.+?)\((\d+?)\.\d+?\) \((.+?)\)\((\d+?),(.+?)\)$/.exec(
+                    /^(.+?)\((\d+?)\..+?\) \((.+?)\)\((\d+?),(.+?)\)$/.exec(
                         cell.innerHTML.replace(/<br>/g, '')
                     );
                 let duration = cell.rowSpan;
@@ -73,16 +86,15 @@ async function scheduleHtmlProvider(
 
     try {
         // 读取周数
-        weeks = dom.querySelector('#startWeek').children.length;
+        let weeks = dom.querySelector('#startWeek').children.length;
         await AIScheduleAlert({
             titleText: '开始导入',
             contentText:
-                '该学期共' +
-                weeks +
-                '周，导入需要一定时间（一般不超过半分钟），请不要关闭本页面。',
+                '该学期共' + weeks + '周，导入需要一定时间，请不要关闭本页面。',
             confirmText: '知道了',
         });
         for (let week = 1; week <= weeks; week++) {
+            displayLoading(week, weeks);
             changeWeek(week);
             do {
                 await sleep(200);
@@ -95,9 +107,8 @@ async function scheduleHtmlProvider(
         await AIScheduleAlert({
             titleText: '导入失败',
             contentText:
-                '出现错误：' +
-                e.message +
-                '，请确保已进入“我的课表”页面后再试。',
+                '导入时出现错误，请确保已进入“我的课表”页面后再试。错误信息：' +
+                e.message,
             confirm: '知道了',
         });
         return 'do not continue';
